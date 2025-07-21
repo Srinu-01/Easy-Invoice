@@ -1,0 +1,282 @@
+
+Project Title: Easy Invoice – Complete Update
+
+
+---
+
+📣 OBJECTIVE
+
+Enhance and fix the generated Easy Invoice website to be fully functional, clean, bug-free, and ready for direct deployment. There must be no missing logic, no broken buttons, and no manual work needed after generation.
+
+
+---
+
+⚠️ STRICT INSTRUCTIONS
+
+1. DO NOT use Supabase or any other third-party DB.
+
+
+2. MUST use only the following:
+
+✅ Firebase for all data storage
+
+✅ Cloudinary for image uploads
+
+
+
+
+
+---
+
+🔧 TECHNICAL CONFIGS (MANDATORY USE)
+
+✅ Firebase Config:
+
+{
+  "apiKey": "AIzaSyCgGiHjudm9bSvnFG7MnsC4TwshIA385Q8",
+  "authDomain": "invoicegenerator-21b78.firebaseapp.com",
+  "projectId": "invoicegenerator-21b78",
+  "storageBucket": "invoicegenerator-21b78.firebasestorage.app",
+  "messagingSenderId": "727100141092",
+  "appId": "1:727100141092:web:9e0bce8cfb8914b86832b1",
+  "measurementId": "G-NBVQL5NKJ8"
+}
+
+✅ Cloudinary Config:
+
+Cloud name: do46xxegj
+
+Upload preset: invoicegenerator
+
+
+
+---
+
+🔁 MISSING FEATURES TO FIX & ADD
+
+1. 🧾 Client Section Updates (Header)
+
+Add this new field: Client GST Number
+
+Show it clearly in both:
+
+Invoice creation form
+
+Final invoice display and PDF
+
+
+
+
+---
+
+2. 💵 GST Calculation Section (Pricing Total)
+
+After items are listed and totaled, add:
+
+SGST (%) field
+
+CGST (%) field
+
+Final Total = subtotal + SGST + CGST
+
+
+Display these on both:
+
+Web invoice
+
+Downloaded PDF
+
+
+Editable by user; default values can be 9% each
+
+
+
+---
+
+3. 🛒 Item Description Field
+
+Each item must include:
+
+Item name (short)
+
+Item description (long, multiline)
+
+
+Description should show clearly and prominently on the final invoice
+
+
+
+---
+
+4. 🏦 Bank Details Section (Bottom of Invoice)
+
+Add a new section for:
+
+Bank Name
+
+Account Number
+
+IFSC Code
+
+Branch Name
+
+UPI ID
+Show this in:
+
+Invoice creation form
+
+Final invoice
+
+PDF output
+
+
+
+---
+
+5. 📲 QR Code Generator with Total Amount
+
+When user enters UPI ID, instantly generate a UPI QR Code
+
+The QR code should automatically include:
+
+UPI ID
+
+Invoice total amount
+
+
+Show QR code on:
+
+Final invoice view
+
+Exported PDF
+
+
+Use a service like Google Chart API or a library to generate the QR code dynamically
+
+
+
+---
+
+6. 📁 Recent Invoices Section – Fix Buttons
+
+Currently broken. Fix the following buttons to work fully:
+
+Button	Must Do
+
+Visit	Open the full invoice with all saved data from Firebase
+Edit	Load invoice into form with pre-filled data
+Download	Generate and download complete PDF
+Print	Trigger browser print of the full invoice
+
+
+These must pull actual invoice data from Firebase, not temporary or dummy values.
+
+
+---
+
+🧠 BEHAVIORAL LOGIC
+
+Every invoice must be saved in Firebase.
+
+When user creates or edits an invoice:
+
+All form fields are stored in Firebase
+
+Cloudinary is used for image uploads (e.g., logo)
+
+URL from Cloudinary is saved in Firebase
+
+
+All recent invoices are shown using Firebase data
+
+Ensure PDF includes:
+
+Logo
+
+Invoice title & number
+
+Date
+
+Client GST
+
+SGST/CGST breakdown
+
+Bank details
+
+UPI QR code
+
+Description for each item
+
+Total amount
+
+
+
+
+---
+
+🧾 INVOICE STRUCTURE (DATA SAMPLE)
+
+{
+  "invoiceId": "INV-20250721-001",
+  "client": {
+    "name": "Samas Sarees",
+    "email": "client@email.com",
+    "gst": "27ABCDE1234F1Z5",
+    "address": "Hyderabad"
+  },
+  "items": [
+    {
+      "name": "Digital Ads",
+      "description": "Social Media campaign for 30 days",
+      "quantity": 1,
+      "rate": 10000,
+      "total": 10000
+    }
+  ],
+  "tax": {
+    "sgst": 9,
+    "cgst": 9
+  },
+  "bankDetails": {
+    "bankName": "HDFC Bank",
+    "accountNumber": "123456789012",
+    "ifsc": "HDFC0001234",
+    "branch": "Banjara Hills",
+    "upiId": "dreamteam@upi",
+    "qrCodeUrl": "https://chart.googleapis.com/chart?...withAmount"
+  },
+  "logoUrl": "https://res.cloudinary.com/do46xxegj/...",
+  "total": 11800,
+  "createdAt": "2025-07-21T12:30:00Z"
+}
+
+
+---
+
+✅ FINAL CHECKLIST FOR LOVABLE.AI
+
+[ ] Firebase is the only database used
+
+[ ] Cloudinary is used for all images
+
+[ ] All buttons (Edit, Visit, Download, Print) work
+
+[ ] Client GST, SGST, CGST fields are implemented
+
+[ ] Item description is shown properly
+
+[ ] QR Code is generated from UPI ID + Amount
+
+[ ] PDF download includes all data
+
+[ ] Website is responsive, clean, and error-free
+
+[ ] Everything is saved to Firebase
+
+[ ] Site is 100% ready to deploy
+
+
+
+---
+
+📌 Note: No features should be left half-done. Everything should be production-ready on final generation.
