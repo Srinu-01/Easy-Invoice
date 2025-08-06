@@ -135,5 +135,42 @@ export async function deleteInvoice(id: string): Promise<void> {
   await deleteDoc(docRef);
 }
 
+export async function duplicateInvoice(id: string): Promise<string> {
+  // Get the original invoice
+  const originalInvoice = await getInvoiceById(id);
+  if (!originalInvoice) {
+    throw new Error("Invoice not found");
+  }
+
+  // Generate a new invoice number
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  const time = String(now.getTime()).slice(-4);
+  const newInvoiceNumber = `INV-${year}${month}${day}-${time}`;
+
+  // Create new invoice data without the ID and with new invoice number and dates
+  const duplicateData: Omit<FirebaseInvoice, 'id'> = {
+    ...originalInvoice,
+    invoiceNumber: newInvoiceNumber,
+    invoiceDate: new Date().toISOString().split('T')[0],
+    dueDate: (() => {
+      const dueDate = new Date();
+      dueDate.setDate(dueDate.getDate() + 30);
+      return dueDate.toISOString().split('T')[0];
+    })(),
+    createdAt: Timestamp.now(),
+    updatedAt: Timestamp.now(),
+  };
+
+  // Remove the id property since it should be auto-generated
+  delete (duplicateData as any).id;
+
+  // Save the duplicated invoice
+  const docRef = await addDoc(collection(db, "invoices"), duplicateData);
+  return docRef.id;
+}
+
 // Export the helper function for use in other components
 export { generateUPIQRCode };

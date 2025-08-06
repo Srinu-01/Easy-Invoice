@@ -26,6 +26,11 @@ function App() {
     setCurrentSection("invoice-creator");
   };
 
+  const handleDuplicateInvoice = (invoice: FirebaseInvoice) => {
+    setEditingInvoice(invoice);
+    setCurrentSection("invoice-creator");
+  };
+
   const handleShowRecent = () => {
     setCurrentSection("recent-invoices");
   };
@@ -47,7 +52,7 @@ function App() {
       case "invoice-creator":
         return <InvoiceCreator editingInvoice={editingInvoice} onBack={handleBackToHome} />;
       case "recent-invoices":
-        return <RecentInvoices onBackToHome={handleBackToHome} onEditInvoice={handleEditInvoice} />;
+        return <RecentInvoices onBackToHome={handleBackToHome} onEditInvoice={handleEditInvoice} onDuplicateInvoice={handleDuplicateInvoice} />;
       default:
         return <Landing onCreateInvoice={handleCreateInvoice} />;
     }

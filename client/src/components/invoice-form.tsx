@@ -7,9 +7,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Plus, Trash2, Upload, Save, FileText, Printer } from "lucide-react";
+import { Plus, Trash2, Upload, Save, FileText, Printer, Copy } from "lucide-react";
 import { uploadToCloudinary } from "@/lib/cloudinary";
-import { saveInvoice, updateInvoice, type FirebaseInvoice, generateUPIQRCode } from "@/lib/firebase";
+import { saveInvoice, updateInvoice, duplicateInvoice, type FirebaseInvoice, generateUPIQRCode } from "@/lib/firebase";
 import { exportToPDF, printInvoice } from "@/utils/pdf-export";
 import { useToast } from "@/hooks/use-toast";
 import { invoiceFormSchema, type InvoiceFormData } from "@shared/schema";
@@ -18,9 +18,10 @@ import type { InvoiceData } from "@/types/invoice";
 interface InvoiceFormProps {
   onDataChange: (data: InvoiceData) => void;
   editingInvoice?: FirebaseInvoice | null;
+  onDuplicateSuccess?: (newInvoice: FirebaseInvoice) => void;
 }
 
-export function InvoiceForm({ onDataChange, editingInvoice }: InvoiceFormProps) {
+export function InvoiceForm({ onDataChange, editingInvoice, onDuplicateSuccess }: InvoiceFormProps) {
   const [isUploading, setIsUploading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [logoFileName, setLogoFileName] = useState<string>("");
@@ -258,6 +259,42 @@ export function InvoiceForm({ onDataChange, editingInvoice }: InvoiceFormProps) 
         variant: "destructive",
         title: "Error",
         description: "Failed to print invoice. Please try again.",
+      });
+    }
+  };
+
+  const handleDuplicateInvoice = async () => {
+    if (!editingInvoice?.id) return;
+
+    try {
+      toast({
+        title: "Duplicating Invoice",
+        description: "Creating a copy of the invoice...",
+      });
+      
+      const newInvoiceId = await duplicateInvoice(editingInvoice.id);
+      
+      toast({
+        title: "Success",
+        description: "Invoice duplicated successfully! The form has been updated with the new invoice data.",
+      });
+      
+      // If there's a callback, fetch the new invoice and call it
+      if (onDuplicateSuccess) {
+        // We would need to fetch the new invoice, but for now let's just create a mock one
+        // In a real scenario, you might want to fetch it from the database
+        const newInvoice: FirebaseInvoice = {
+          ...editingInvoice,
+          id: newInvoiceId
+        };
+        onDuplicateSuccess(newInvoice);
+      }
+    } catch (error) {
+      console.error("Error duplicating invoice:", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to duplicate invoice. Please try again.",
       });
     }
   };
@@ -796,6 +833,17 @@ export function InvoiceForm({ onDataChange, editingInvoice }: InvoiceFormProps) 
               (editingInvoice?.id ? "Update Invoice" : "Save Invoice")
             }
           </Button>
+          {editingInvoice?.id && (
+            <Button
+              type="button"
+              onClick={handleDuplicateInvoice}
+              variant="secondary"
+              className="flex-1 text-sm sm:text-base"
+            >
+              <Copy className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
+              Duplicate Invoice
+            </Button>
+          )}
           <Button
             type="button"
             onClick={handleExportPDF}

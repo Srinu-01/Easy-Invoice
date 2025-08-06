@@ -4,8 +4,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { FileText, Download, Printer, Eye, Edit, Trash2 } from "lucide-react";
-import { getRecentInvoices, deleteInvoice, type FirebaseInvoice } from "@/lib/firebase";
+import { FileText, Download, Printer, Eye, Edit, Trash2, Copy } from "lucide-react";
+import { getRecentInvoices, deleteInvoice, duplicateInvoice, type FirebaseInvoice } from "@/lib/firebase";
 import { exportToPDF, printInvoice } from "@/utils/pdf-export";
 import { InvoicePreview } from "@/components/invoice-preview";
 import { useToast } from "@/hooks/use-toast";
@@ -14,9 +14,10 @@ import type { InvoiceData } from "@/types/invoice";
 interface RecentInvoicesProps {
   onBackToHome: () => void;
   onEditInvoice: (invoice: FirebaseInvoice) => void;
+  onDuplicateInvoice: (invoice: FirebaseInvoice) => void;
 }
 
-export function RecentInvoices({ onBackToHome, onEditInvoice }: RecentInvoicesProps) {
+export function RecentInvoices({ onBackToHome, onEditInvoice, onDuplicateInvoice }: RecentInvoicesProps) {
   const [invoices, setInvoices] = useState<FirebaseInvoice[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedInvoice, setSelectedInvoice] = useState<InvoiceData | null>(null);
@@ -191,6 +192,39 @@ export function RecentInvoices({ onBackToHome, onEditInvoice }: RecentInvoicesPr
     }
   };
 
+  const handleDuplicateInvoice = async (invoice: FirebaseInvoice) => {
+    try {
+      toast({
+        title: "Duplicating Invoice",
+        description: "Creating a copy of the invoice...",
+      });
+      
+      const newInvoiceId = await duplicateInvoice(invoice.id!);
+      
+      toast({
+        title: "Success",
+        description: "Invoice duplicated successfully! Redirecting to edit the new invoice.",
+      });
+      
+      // Reload invoices to show the new duplicate
+      await loadInvoices();
+      
+      // Find the newly created invoice and navigate to edit it
+      const updatedInvoices = await getRecentInvoices();
+      const newInvoice = updatedInvoices.find(inv => inv.id === newInvoiceId);
+      if (newInvoice) {
+        onDuplicateInvoice(newInvoice);
+      }
+    } catch (error) {
+      console.error("Error duplicating invoice:", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to duplicate invoice. Please try again.",
+      });
+    }
+  };
+
   if (loading) {
     return (
       <section className="min-h-screen py-8 sm:py-12 px-4 sm:px-6 lg:px-8">
@@ -246,7 +280,7 @@ export function RecentInvoices({ onBackToHome, onEditInvoice }: RecentInvoicesPr
                     </div>
                   </div>
                   <div className="mt-4 pt-4 border-t border-slate-200 dark:border-slate-600 space-y-2">
-                    <div className="grid grid-cols-3 gap-1 sm:gap-2">
+                    <div className="grid grid-cols-4 gap-1 sm:gap-2">
                       <Button
                         size="sm"
                         variant="outline"
@@ -264,6 +298,15 @@ export function RecentInvoices({ onBackToHome, onEditInvoice }: RecentInvoicesPr
                       >
                         <Edit className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-1" />
                         <span className="hidden sm:inline">Edit</span>
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="text-xs sm:text-sm h-8 sm:h-9 text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-950"
+                        onClick={() => handleDuplicateInvoice(invoice)}
+                      >
+                        <Copy className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-1" />
+                        <span className="hidden sm:inline">Copy</span>
                       </Button>
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
@@ -366,6 +409,23 @@ export function RecentInvoices({ onBackToHome, onEditInvoice }: RecentInvoicesPr
                 <Printer className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
                 Print
               </Button>
+              {selectedInvoice && (
+                <Button
+                  variant="secondary"
+                  className="w-full sm:w-auto text-sm sm:text-base"
+                  onClick={() => {
+                    // Find the corresponding FirebaseInvoice for this InvoiceData
+                    const correspondingInvoice = invoices.find(inv => inv.id === selectedInvoice.id);
+                    if (correspondingInvoice) {
+                      setShowDialog(false);
+                      handleDuplicateInvoice(correspondingInvoice);
+                    }
+                  }}
+                >
+                  <Copy className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
+                  Duplicate
+                </Button>
+              )}
             </DialogFooter>
           </DialogContent>
         </Dialog>
