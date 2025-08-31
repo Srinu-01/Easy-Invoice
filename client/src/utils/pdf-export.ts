@@ -2,6 +2,16 @@ import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import type { InvoiceData, ThemeStyles } from '@/types/invoice';
 
+export function getCurrencySymbol(currency: string): string {
+  switch (currency) {
+    case 'USD':
+      return '$';
+    case 'INR':
+    default:
+      return '₹';
+  }
+}
+
 export function getThemeStyles(theme: string): ThemeStyles {
   switch (theme) {
     case 'modern':
@@ -39,47 +49,50 @@ export function getThemeStyles(theme: string): ThemeStyles {
 
 export function generateInvoiceHTML(data: InvoiceData): string {
   const themeStyles = getThemeStyles(data.theme);
+  const currencySymbol = getCurrencySymbol(data.currency || 'INR');
   
   return `
-    <div class="invoice-container p-8 bg-white" style="width: 800px; min-height: 800px; font-family: 'Inter', sans-serif; background-color: #ffffff; box-sizing: border-box; padding: 32px;">
-      <!-- Header -->
-      <div class="flex justify-between items-start mb-8">
-        <div>
-          ${data.logoUrl ? `<img src="${data.logoUrl}" alt="Logo" style="height: 64px; margin-bottom: 16px; object-fit: contain;">` : ''}
-          <h1 style="font-size: 2rem; font-weight: bold; color: #1f2937; margin: 0;">INVOICE</h1>
-          <p style="color: #6b7280; margin: 4px 0 0 0;">${data.invoiceNumber}</p>
+    <div class="invoice-container p-8 bg-white" style="width: 800px; min-height: 800px; font-family: 'Inter', sans-serif; background-color: #ffffff; box-sizing: border-box; padding: 40px 32px 32px 32px; margin-top: 20px;">
+      <!-- Header Section - Keep together -->
+      <div class="invoice-header" style="page-break-inside: avoid; margin-bottom: 2rem;">
+        <div class="flex justify-between items-start mb-8">
+          <div>
+            ${data.logoUrl ? `<img src="${data.logoUrl}" alt="Logo" style="height: 64px; margin-bottom: 16px; object-fit: contain;">` : ''}
+            <h1 style="font-size: 2rem; font-weight: bold; color: #1f2937; margin: 0;">INVOICE</h1>
+            <p style="color: #6b7280; margin: 4px 0 0 0;">${data.invoiceNumber}</p>
+          </div>
+          <div style="text-align: right;">
+            <div style="font-size: 0.875rem; color: #6b7280; margin-bottom: 4px;">Invoice Date:</div>
+            <div style="font-weight: 600; color: #1f2937;">${data.invoiceDate}</div>
+            <div style="font-size: 0.875rem; color: #6b7280; margin-top: 8px; margin-bottom: 4px;">Due Date:</div>
+            <div style="font-weight: 600; color: #1f2937;">${data.dueDate}</div>
+          </div>
         </div>
-        <div style="text-align: right;">
-          <div style="font-size: 0.875rem; color: #6b7280; margin-bottom: 4px;">Invoice Date:</div>
-          <div style="font-weight: 600; color: #1f2937;">${data.invoiceDate}</div>
-          <div style="font-size: 0.875rem; color: #6b7280; margin-top: 8px; margin-bottom: 4px;">Due Date:</div>
-          <div style="font-weight: 600; color: #1f2937;">${data.dueDate}</div>
+
+        <!-- Company & Client Info -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-bottom: 2rem;">
+          <div>
+            <h3 style="font-weight: 600; color: #1f2937; margin-bottom: 8px;">From:</h3>
+            <div style="color: #1f2937;">
+              <div style="font-weight: 600;">${data.companyName}</div>
+              ${data.companyGST ? `<div style="font-size: 0.875rem;">GST: ${data.companyGST}</div>` : ''}
+              <div style="font-size: 0.875rem; white-space: pre-line;">${data.companyAddress || ''}</div>
+            </div>
+          </div>
+          <div>
+            <h3 style="font-weight: 600; color: #1f2937; margin-bottom: 8px;">To:</h3>
+            <div style="color: #1f2937;">
+              <div style="font-weight: 600;">${data.clientName}</div>
+              ${data.clientEmail ? `<div style="font-size: 0.875rem;">${data.clientEmail}</div>` : ''}
+              ${data.clientGST ? `<div style="font-size: 0.875rem;">GST: ${data.clientGST}</div>` : ''}
+              <div style="font-size: 0.875rem; white-space: pre-line;">${data.clientAddress || ''}</div>
+            </div>
+          </div>
         </div>
       </div>
 
-      <!-- Company & Client Info -->
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-bottom: 2rem;">
-        <div>
-          <h3 style="font-weight: 600; color: #1f2937; margin-bottom: 8px;">From:</h3>
-          <div style="color: #1f2937;">
-            <div style="font-weight: 600;">${data.companyName}</div>
-            ${data.companyGST ? `<div style="font-size: 0.875rem;">GST: ${data.companyGST}</div>` : ''}
-            <div style="font-size: 0.875rem; white-space: pre-line;">${data.companyAddress || ''}</div>
-          </div>
-        </div>
-        <div>
-          <h3 style="font-weight: 600; color: #1f2937; margin-bottom: 8px;">To:</h3>
-          <div style="color: #1f2937;">
-            <div style="font-weight: 600;">${data.clientName}</div>
-            ${data.clientEmail ? `<div style="font-size: 0.875rem;">${data.clientEmail}</div>` : ''}
-            ${data.clientGST ? `<div style="font-size: 0.875rem;">GST: ${data.clientGST}</div>` : ''}
-            <div style="font-size: 0.875rem; white-space: pre-line;">${data.clientAddress || ''}</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Items Table -->
-      <div style="margin-bottom: 2rem;">
+      <!-- Items Table Section - Keep together when possible -->
+      <div class="invoice-items" style="page-break-inside: avoid; margin-bottom: 2rem;">
         <table style="width: 100%; border-collapse: collapse; border: 2px solid #1f2937;">
           <thead>
             <tr style="background-color: #1f2937 !important; color: #ffffff !important;">
@@ -91,49 +104,64 @@ export function generateInvoiceHTML(data: InvoiceData): string {
           </thead>
           <tbody>
             ${data.items.map(item => `
-              <tr style="border-bottom: 1px solid #e5e7eb; background-color: #ffffff;">
+              <tr style="border-bottom: 1px solid #e5e7eb; background-color: #ffffff; page-break-inside: avoid;">
                 <td style="padding: 12px 16px; border: 1px solid #e5e7eb; color: #1f2937; vertical-align: top;">
                   <div style="font-weight: 600; color: #1f2937; margin-bottom: 4px; font-size: 14px;">${item.name}</div>
                   <div style="font-size: 12px; color: #6b7280; line-height: 1.4; white-space: pre-line;">${item.description}</div>
                 </td>
                 <td style="text-align: right; padding: 12px 16px; border: 1px solid #e5e7eb; color: #1f2937; font-size: 14px; vertical-align: top;">${item.quantity}</td>
-                <td style="text-align: right; padding: 12px 16px; border: 1px solid #e5e7eb; color: #1f2937; font-size: 14px; vertical-align: top;">₹${item.rate.toFixed(2)}</td>
-                <td style="text-align: right; padding: 12px 16px; border: 1px solid #e5e7eb; color: #1f2937; font-size: 14px; font-weight: 600; vertical-align: top;">₹${item.amount.toFixed(2)}</td>
+                <td style="text-align: right; padding: 12px 16px; border: 1px solid #e5e7eb; color: #1f2937; font-size: 14px; vertical-align: top;">${currencySymbol}${item.rate.toFixed(2)}</td>
+                <td style="text-align: right; padding: 12px 16px; border: 1px solid #e5e7eb; color: #1f2937; font-size: 14px; font-weight: 600; vertical-align: top;">${currencySymbol}${item.amount.toFixed(2)}</td>
               </tr>
             `).join('')}
           </tbody>
         </table>
       </div>
 
-      <!-- Totals -->
-      <div style="display: flex; justify-content: flex-end; margin-bottom: 2rem;">
+      <!-- Totals Section - Keep together -->
+      <div class="invoice-totals" style="page-break-inside: avoid; display: flex; justify-content: flex-end; margin-bottom: 2rem;">
         <div style="width: 256px;">
           <div style="display: flex; justify-content: space-between; padding: 8px 0; color: #374151;">
             <span style="color: #374151;">Subtotal:</span>
-            <span style="color: #374151;">₹${data.subtotal.toFixed(2)}</span>
+            <span style="color: #374151;">${currencySymbol}${data.subtotal.toFixed(2)}</span>
           </div>
+          ${data.discountAmount > 0 ? `
+            <div style="display: flex; justify-content: space-between; padding: 8px 0; color: #dc2626;">
+              <span style="color: #dc2626;">Discount ${data.discountType === 'percentage' ? `(${data.discountValue}%)` : ''}:</span>
+              <span style="color: #dc2626;">-${currencySymbol}${data.discountAmount.toFixed(2)}</span>
+            </div>
+            ${data.discountAmount > 0 ? `
+              <div style="display: flex; justify-content: space-between; padding: 8px 0; color: #16a34a; font-weight: 600;">
+                <span style="color: #16a34a;">You Save:</span>
+                <span style="color: #16a34a;">${currencySymbol}${data.discountAmount.toFixed(2)}</span>
+              </div>
+            ` : ''}
+          ` : ''}
           ${data.sgstPercent > 0 ? `
             <div style="display: flex; justify-content: space-between; padding: 8px 0; color: #374151;">
               <span style="color: #374151;">SGST (${data.sgstPercent}%):</span>
-              <span style="color: #374151;">₹${data.sgstAmount.toFixed(2)}</span>
+              <span style="color: #374151;">${currencySymbol}${data.sgstAmount.toFixed(2)}</span>
             </div>
           ` : ''}
           ${data.cgstPercent > 0 ? `
             <div style="display: flex; justify-content: space-between; padding: 8px 0; color: #374151;">
               <span style="color: #374151;">CGST (${data.cgstPercent}%):</span>
-              <span style="color: #374151;">₹${data.cgstAmount.toFixed(2)}</span>
+              <span style="color: #374151;">${currencySymbol}${data.cgstAmount.toFixed(2)}</span>
             </div>
           ` : ''}
           <div style="display: flex; justify-content: space-between; padding: 12px 0; border-top: 2px solid #1f2937; font-weight: bold; font-size: 1.125rem; color: #1f2937;">
             <span style="color: #1f2937;">Total:</span>
-            <span style="color: #1f2937;">₹${data.total.toFixed(2)}</span>
+            <span style="color: #1f2937;">${currencySymbol}${data.total.toFixed(2)}</span>
           </div>
         </div>
       </div>
 
+      <!-- Section Separator -->
+      <div style="margin: 3rem 0; height: 1px; background: transparent;"></div>
+
       <!-- Terms and Conditions -->
       ${data.termsAndConditions ? `
-        <div style="margin-top: 2rem; margin-bottom: 2rem; page-break-inside: avoid;">
+        <div class="terms-conditions" style="margin-top: 2rem; margin-bottom: 2rem; page-break-inside: avoid;">
           <div style="text-align: center;">
             <h4 style="font-weight: 600; color: #1f2937; margin-bottom: 16px; font-size: 18px;">Terms and Conditions</h4>
             <div style="color: #374151; font-size: 14px; line-height: 1.6; white-space: pre-line; padding: 16px; border: 1px solid #e5e7eb; border-radius: 6px; background-color: #f9fafb; max-width: 600px; margin: 0 auto; text-align: left;">${data.termsAndConditions}</div>
@@ -143,7 +171,7 @@ export function generateInvoiceHTML(data: InvoiceData): string {
 
       <!-- Bank Details -->
       ${(data.bankName || data.accountNumber || data.ifscCode || data.branchName || data.upiId) ? `
-        <div style="margin-top: 2rem; border: 2px solid #e5e7eb; padding: 16px; border-radius: 8px; background-color: #f9fafb; page-break-inside: avoid;">
+        <div class="bank-details" style="margin-top: 2rem; border: 2px solid #e5e7eb; padding: 16px; border-radius: 8px; background-color: #f9fafb; page-break-inside: avoid;">
           <h4 style="font-weight: 600; color: #1f2937; margin-bottom: 12px; font-size: 16px;">Bank Details:</h4>
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; font-size: 14px; color: #374151;">
             <div>
@@ -157,14 +185,11 @@ export function generateInvoiceHTML(data: InvoiceData): string {
               ${data.qrCodeUrl ? `
                 <div style="margin-top: 12px;">
                   <strong style="color: #1f2937;">UPI QR Code:</strong><br>
-                  <div style="width: 100px; height: 100px; margin-top: 8px; border: 1px solid #d1d5db; border-radius: 4px; position: relative; background-color: #f9fafb;">
+                  <div style="width: 100px; height: 100px; margin-top: 8px; border: 1px solid #d1d5db; border-radius: 4px; background-color: #ffffff; display: flex; align-items: center; justify-content: center; padding: 5px; box-sizing: border-box;">
                     <img 
                       src="${data.qrCodeUrl}" 
                       alt="UPI QR Code" 
-                      loading="eager"
-                      style="width: 100%; height: 100%; object-fit: contain; display: block;"
-                      onload="this.style.backgroundColor='transparent';"
-                      onerror="this.style.display='none'; this.parentElement.innerHTML='<div style=\\"display:flex;align-items:center;justify-content:center;height:100%;font-size:10px;color:#6b7280;text-align:center;\\">QR Code<br>Unavailable</div>';"
+                      style="width: 90px; height: 90px; object-fit: contain; display: block; margin: auto;"
                     />
                   </div>
                 </div>
@@ -176,7 +201,7 @@ export function generateInvoiceHTML(data: InvoiceData): string {
 
       <!-- Notes -->
       ${data.notes ? `
-        <div style="margin-top: 2rem; page-break-inside: avoid; margin-bottom: 2rem;">
+        <div class="invoice-notes" style="margin-top: 2rem; page-break-inside: avoid; margin-bottom: 2rem;">
           <h4 style="font-weight: 600; color: #1f2937; margin-bottom: 8px; font-size: 16px;">Notes:</h4>
           <div style="color: #374151; font-size: 14px; line-height: 1.5; white-space: pre-line; padding: 12px; border: 1px solid #e5e7eb; border-radius: 6px; background-color: #f9fafb; min-height: 60px;">${data.notes}</div>
         </div>
@@ -217,17 +242,24 @@ export async function exportToPDF(invoiceData: InvoiceData): Promise<void> {
           const timeout = setTimeout(() => {
             console.warn('Image load timeout:', img.src);
             resolve();
-          }, 3000); // 3 second timeout for each image
+          }, 5000); // 5 second timeout for each image
           
           img.onload = () => {
             clearTimeout(timeout);
+            console.log('Image loaded successfully:', img.src);
             resolve();
           };
           img.onerror = () => {
             clearTimeout(timeout);
             console.warn('Image load error:', img.src);
-            // Hide the image if it fails to load
-            img.style.display = 'none';
+            // Replace broken image with a simple placeholder
+            if (img.alt === 'UPI QR Code') {
+              img.style.display = 'none';
+              const container = img.parentElement;
+              if (container) {
+                container.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:90px;width:90px;font-size:12px;color:#6b7280;text-align:center;background-color:#f9fafb;border:1px dashed #d1d5db;border-radius:4px;">QR Code<br>Not Available</div>';
+              }
+            }
             resolve();
           };
           
@@ -244,7 +276,7 @@ export async function exportToPDF(invoiceData: InvoiceData): Promise<void> {
     await Promise.all(imageLoadPromises);
     
     // Add a small additional delay to ensure rendering is complete
-    await new Promise(resolve => setTimeout(resolve, 500));
+    await new Promise(resolve => setTimeout(resolve, 1000));
 
     const canvas = await html2canvas(element, {
       scale: 2,
@@ -254,9 +286,16 @@ export async function exportToPDF(invoiceData: InvoiceData): Promise<void> {
       removeContainer: false,
       logging: false,
       width: 800,
-      height: Math.max(1000, element.scrollHeight + 100),
+      height: Math.max(1200, element.scrollHeight + 40),
       windowWidth: 800,
-      windowHeight: Math.max(1000, element.scrollHeight + 100),
+      windowHeight: Math.max(1200, element.scrollHeight + 40),
+      ignoreElements: (element) => {
+        // Ignore loading indicators and other non-printable elements
+        const htmlElement = element as HTMLElement;
+        return element.classList?.contains('loading-indicator') || 
+               element.classList?.contains('no-print') ||
+               htmlElement.style?.display === 'none';
+      },
       onclone: (clonedDoc) => {
         // Ensure all text has proper color styling
         const elements = clonedDoc.querySelectorAll('*');
@@ -270,6 +309,26 @@ export async function exportToPDF(invoiceData: InvoiceData): Promise<void> {
             el.style.color = '#ffffff';
             el.style.fontWeight = '700';
           }
+          // Add page break helpers for better content division
+          if (el.style) {
+            // Prevent important sections from breaking
+            if (el.classList?.contains('invoice-header') || 
+                el.classList?.contains('invoice-totals') ||
+                el.classList?.contains('invoice-items')) {
+              el.style.pageBreakInside = 'avoid';
+            }
+            // Ensure table rows don't break awkwardly
+            if (el.tagName === 'TR') {
+              el.style.pageBreakInside = 'avoid';
+            }
+            // Add some spacing for bank details and notes sections
+            if (el.classList?.contains('bank-details') || 
+                el.classList?.contains('invoice-notes') ||
+                el.classList?.contains('terms-conditions')) {
+              el.style.pageBreakInside = 'avoid';
+              el.style.marginTop = '1rem';
+            }
+          }
         });
       }
     });
@@ -279,14 +338,16 @@ export async function exportToPDF(invoiceData: InvoiceData): Promise<void> {
     
     const pdfWidth = pdf.internal.pageSize.getWidth();
     const pdfHeight = pdf.internal.pageSize.getHeight();
+    const marginTop = 15; // Increased top margin
+    const marginBottom = 15; // Increased bottom margin
+    const availableHeight = pdfHeight - marginTop - marginBottom;
     const imgWidth = pdfWidth;
     const imgHeight = (canvas.height * pdfWidth) / canvas.width;
     
-    let position = 0;
-    
-    // If content is larger than one page, split it across multiple pages
-    if (imgHeight > pdfHeight) {
-      const pageHeight = pdfHeight;
+    // Improved page break handling to prevent content breaking in middle
+    if (imgHeight > availableHeight) {
+      // Calculate better page breaks to avoid cutting content in middle
+      const pageHeight = availableHeight;
       const totalPages = Math.ceil(imgHeight / pageHeight);
       
       for (let i = 0; i < totalPages; i++) {
@@ -294,11 +355,11 @@ export async function exportToPDF(invoiceData: InvoiceData): Promise<void> {
           pdf.addPage();
         }
         
-        const startY = -(pageHeight * i);
+        const startY = marginTop - (pageHeight * i);
         pdf.addImage(imgData, 'PNG', 0, startY, imgWidth, imgHeight);
       }
     } else {
-      pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
+      pdf.addImage(imgData, 'PNG', 0, marginTop, imgWidth, imgHeight);
     }
     
     pdf.save(`invoice-${invoiceData.invoiceNumber || 'draft'}.pdf`);
@@ -450,10 +511,13 @@ export function printInvoice(invoiceData: InvoiceData): void {
                   img.onload = () => handleImageLoad(img, true);
                   img.onerror = () => {
                     console.warn('Image load failed:', img.src);
-                    // Hide broken images and show fallback
+                    // Hide broken images and show clean fallback
                     img.style.display = 'none';
                     if (img.alt === 'UPI QR Code') {
-                      img.parentElement.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100px;width:100px;border:1px solid #d1d5db;border-radius:4px;font-size:10px;color:#6b7280;text-align:center;background:#f9fafb;">QR Code<br>Unavailable</div>';
+                      const container = img.parentElement;
+                      if (container) {
+                        container.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100px;width:100px;border:1px solid #d1d5db;border-radius:4px;font-size:12px;color:#6b7280;text-align:center;background:#f9fafb;">QR Code<br>Not Available</div>';
+                      }
                     }
                     handleImageLoad(img, false);
                   };

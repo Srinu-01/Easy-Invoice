@@ -46,8 +46,11 @@ export function InvoiceForm({ onDataChange, editingInvoice, onDuplicateSuccess }
         return date.toISOString().split('T')[0];
       })(),
       items: editingInvoice?.items || [{ name: "", description: "", quantity: 1, rate: 0, amount: 0 }],
-      sgstPercent: editingInvoice?.sgstPercent || 9,
-      cgstPercent: editingInvoice?.cgstPercent || 9,
+      sgstPercent: editingInvoice?.sgstPercent ?? 9,
+      cgstPercent: editingInvoice?.cgstPercent ?? 9,
+      discountType: editingInvoice?.discountType || "percentage",
+      discountValue: editingInvoice?.discountValue ?? 0,
+      currency: editingInvoice?.currency || "INR",
       notes: editingInvoice?.notes || "",
       termsAndConditions: editingInvoice?.termsAndConditions || "",
       theme: editingInvoice?.theme || "classic",
@@ -70,9 +73,24 @@ export function InvoiceForm({ onDataChange, editingInvoice, onDuplicateSuccess }
   useEffect(() => {
     const items = watchedValues.items || [];
     const subtotal = items.reduce((sum, item) => sum + (item?.amount || 0), 0);
-    const sgstAmount = subtotal * ((watchedValues.sgstPercent || 0) / 100);
-    const cgstAmount = subtotal * ((watchedValues.cgstPercent || 0) / 100);
-    const total = subtotal + sgstAmount + cgstAmount;
+    
+    // Calculate discount
+    let discountAmount = 0;
+    const discountValue = watchedValues.discountValue ?? 0;
+    const discountType = watchedValues.discountType || "percentage";
+    
+    if (discountValue > 0) {
+      if (discountType === "percentage") {
+        discountAmount = subtotal * (discountValue / 100);
+      } else {
+        discountAmount = discountValue;
+      }
+    }
+    
+    const discountedSubtotal = subtotal - discountAmount;
+    const sgstAmount = discountedSubtotal * ((watchedValues.sgstPercent || 0) / 100);
+    const cgstAmount = discountedSubtotal * ((watchedValues.cgstPercent || 0) / 100);
+    const total = discountedSubtotal + sgstAmount + cgstAmount;
 
     // Generate QR code URL if UPI ID is provided using the centralized function
     const qrCodeUrl = watchedValues.upiId ? generateUPIQRCode(
@@ -84,8 +102,12 @@ export function InvoiceForm({ onDataChange, editingInvoice, onDuplicateSuccess }
 
     const invoiceData: InvoiceData = {
       ...watchedValues,
+      discountType: discountType as 'percentage' | 'fixed',
+      discountValue: discountValue,
+      currency: (watchedValues.currency || 'INR') as 'INR' | 'USD',
       items: items.filter(item => item?.name || item?.description),
       subtotal,
+      discountAmount,
       sgstAmount,
       cgstAmount,
       total,
@@ -183,9 +205,24 @@ export function InvoiceForm({ onDataChange, editingInvoice, onDuplicateSuccess }
       const formData = form.getValues();
       const items = formData.items.filter(item => item.name || item.description);
       const subtotal = items.reduce((sum, item) => sum + item.amount, 0);
-      const sgstAmount = subtotal * (formData.sgstPercent / 100);
-      const cgstAmount = subtotal * (formData.cgstPercent / 100);
-      const total = subtotal + sgstAmount + cgstAmount;
+      
+      // Calculate discount
+      let discountAmount = 0;
+      const discountValue = formData.discountValue ?? 0;
+      const discountType = formData.discountType || "percentage";
+      
+      if (discountValue > 0) {
+        if (discountType === "percentage") {
+          discountAmount = subtotal * (discountValue / 100);
+        } else {
+          discountAmount = discountValue;
+        }
+      }
+      
+      const discountedSubtotal = subtotal - discountAmount;
+      const sgstAmount = discountedSubtotal * ((formData.sgstPercent ?? 9) / 100);
+      const cgstAmount = discountedSubtotal * ((formData.cgstPercent ?? 9) / 100);
+      const total = discountedSubtotal + sgstAmount + cgstAmount;
 
       // Generate QR code URL if UPI ID is provided using the centralized function
       const qrCodeUrl = formData.upiId ? generateUPIQRCode(
@@ -197,8 +234,12 @@ export function InvoiceForm({ onDataChange, editingInvoice, onDuplicateSuccess }
 
       const invoiceData: InvoiceData = {
         ...formData,
+        discountType: discountType as 'percentage' | 'fixed',
+        discountValue: discountValue,
+        currency: (formData.currency || 'INR') as 'INR' | 'USD',
         items,
         subtotal,
+        discountAmount,
         sgstAmount,
         cgstAmount,
         total,
@@ -224,9 +265,24 @@ export function InvoiceForm({ onDataChange, editingInvoice, onDuplicateSuccess }
       const formData = form.getValues();
       const items = formData.items.filter(item => item.name || item.description);
       const subtotal = items.reduce((sum, item) => sum + item.amount, 0);
-      const sgstAmount = subtotal * (formData.sgstPercent / 100);
-      const cgstAmount = subtotal * (formData.cgstPercent / 100);
-      const total = subtotal + sgstAmount + cgstAmount;
+      
+      // Calculate discount
+      let discountAmount = 0;
+      const discountValue = formData.discountValue ?? 0;
+      const discountType = formData.discountType || "percentage";
+      
+      if (discountValue > 0) {
+        if (discountType === "percentage") {
+          discountAmount = subtotal * (discountValue / 100);
+        } else {
+          discountAmount = discountValue;
+        }
+      }
+      
+      const discountedSubtotal = subtotal - discountAmount;
+      const sgstAmount = discountedSubtotal * ((formData.sgstPercent ?? 9) / 100);
+      const cgstAmount = discountedSubtotal * ((formData.cgstPercent ?? 9) / 100);
+      const total = discountedSubtotal + sgstAmount + cgstAmount;
 
       // Generate QR code URL if UPI ID is provided using the centralized function
       const qrCodeUrl = formData.upiId ? generateUPIQRCode(
@@ -238,8 +294,12 @@ export function InvoiceForm({ onDataChange, editingInvoice, onDuplicateSuccess }
 
       const invoiceData: InvoiceData = {
         ...formData,
+        discountType: discountType as 'percentage' | 'fixed',
+        discountValue: discountValue,
+        currency: (formData.currency || 'INR') as 'INR' | 'USD',
         items,
         subtotal,
+        discountAmount,
         sgstAmount,
         cgstAmount,
         total,
@@ -580,7 +640,7 @@ export function InvoiceForm({ onDataChange, editingInvoice, onDuplicateSuccess }
                         name={`items.${index}.rate`}
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel className="text-sm sm:text-base">Rate</FormLabel>
+                            <FormLabel className="text-sm sm:text-base">Rate ({(watchedValues.currency || 'INR') === 'INR' ? '₹' : '$'})</FormLabel>
                             <FormControl>
                               <Input
                                 type="number"
@@ -603,7 +663,7 @@ export function InvoiceForm({ onDataChange, editingInvoice, onDuplicateSuccess }
                         name={`items.${index}.amount`}
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel className="text-sm sm:text-base">Amount</FormLabel>
+                            <FormLabel className="text-sm sm:text-base">Amount ({(watchedValues.currency || 'INR') === 'INR' ? '₹' : '$'})</FormLabel>
                             <FormControl>
                               <Input
                                 type="number"
@@ -635,8 +695,8 @@ export function InvoiceForm({ onDataChange, editingInvoice, onDuplicateSuccess }
               </div>
             </div>
 
-            {/* Tax and Theme */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
+            {/* Tax, Discount and Currency */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 sm:gap-6">
               <FormField
                 control={form.control}
                 name="sgstPercent"
@@ -679,6 +739,81 @@ export function InvoiceForm({ onDataChange, editingInvoice, onDuplicateSuccess }
                   </FormItem>
                 )}
               />
+              <FormField
+                control={form.control}
+                name="discountType"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-sm sm:text-base">Discount Type</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger className="text-sm sm:text-base">
+                          <SelectValue placeholder="Type" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="percentage">Percentage (%)</SelectItem>
+                        <SelectItem value="fixed">Fixed Amount</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="discountValue"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-sm sm:text-base">
+                      Discount {(watchedValues.discountType || 'percentage') === 'percentage' ? '(%)' : `(${(watchedValues.currency || 'INR') === 'INR' ? '₹' : '$'})`}
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        placeholder="0"
+                        {...field}
+                        onChange={(e) => field.onChange(Number(e.target.value))}
+                        className="text-sm sm:text-base"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="currency"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-sm sm:text-base">Currency</FormLabel>
+                    <Select 
+                      onValueChange={(value) => {
+                        field.onChange(value);
+                        // Force form to update and recalculate
+                        form.trigger();
+                      }} 
+                      value={field.value || 'INR'}
+                    >
+                      <FormControl>
+                        <SelectTrigger className="text-sm sm:text-base">
+                          <SelectValue placeholder="Select currency" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="INR">₹ INR (Rupees)</SelectItem>
+                        <SelectItem value="USD">$ USD (Dollars)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-1 gap-4 sm:gap-6">
               <FormField
                 control={form.control}
                 name="theme"

@@ -21,6 +21,9 @@ export interface InvoiceFormData {
   items: InvoiceItem[];
   sgstPercent: number;
   cgstPercent: number;
+  discountType: 'percentage' | 'fixed';
+  discountValue: number;
+  currency: 'INR' | 'USD';
   notes?: string;
   termsAndConditions?: string;
   theme: 'classic' | 'modern' | 'bold';
@@ -34,6 +37,7 @@ export interface InvoiceFormData {
 export interface InvoiceData extends InvoiceFormData {
   id?: string;
   subtotal: number;
+  discountAmount: number;
   sgstAmount: number;
   cgstAmount: number;
   total: number;

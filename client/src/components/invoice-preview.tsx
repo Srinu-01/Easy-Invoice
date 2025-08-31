@@ -1,6 +1,6 @@
 import { memo } from "react";
 import type { InvoiceData } from "@/types/invoice";
-import { getThemeStyles } from "@/utils/pdf-export";
+import { getThemeStyles, getCurrencySymbol } from "@/utils/pdf-export";
 
 interface InvoicePreviewProps {
   data: InvoiceData;
@@ -9,6 +9,7 @@ interface InvoicePreviewProps {
 
 export const InvoicePreview = memo(function InvoicePreview({ data, className = "" }: InvoicePreviewProps) {
   const themeStyles = getThemeStyles(data.theme);
+  const currencySymbol = getCurrencySymbol(data.currency);
 
   return (
     <div className={`bg-white rounded-lg shadow-xl transform transition-all duration-300 hover:rotate-1 ${className}`} style={{ minHeight: '600px' }}>
@@ -70,8 +71,8 @@ export const InvoicePreview = memo(function InvoicePreview({ data, className = "
                     <div className="text-xs text-gray-600 whitespace-pre-line">{item.description}</div>
                   </td>
                   <td className="text-right py-2 sm:py-3 px-2 sm:px-4 text-xs sm:text-sm text-gray-800">{item.quantity}</td>
-                  <td className="text-right py-2 sm:py-3 px-2 sm:px-4 text-xs sm:text-sm text-gray-800">₹{item.rate.toFixed(2)}</td>
-                  <td className="text-right py-2 sm:py-3 px-2 sm:px-4 text-xs sm:text-sm text-gray-800">₹{item.amount.toFixed(2)}</td>
+                  <td className="text-right py-2 sm:py-3 px-2 sm:px-4 text-xs sm:text-sm text-gray-800">{currencySymbol}{item.rate.toFixed(2)}</td>
+                  <td className="text-right py-2 sm:py-3 px-2 sm:px-4 text-xs sm:text-sm text-gray-800">{currencySymbol}{item.amount.toFixed(2)}</td>
                 </tr>
               ))}
             </tbody>
@@ -83,23 +84,37 @@ export const InvoicePreview = memo(function InvoicePreview({ data, className = "
           <div className="w-full sm:w-64 max-w-sm">
             <div className="flex justify-between py-1 sm:py-2">
               <span className="text-xs sm:text-sm text-gray-700">Subtotal:</span>
-              <span className="text-xs sm:text-sm text-gray-700">₹{data.subtotal.toFixed(2)}</span>
+              <span className="text-xs sm:text-sm text-gray-700">{currencySymbol}{data.subtotal.toFixed(2)}</span>
             </div>
+            {data.discountAmount > 0 && (
+              <>
+                <div className="flex justify-between py-1 sm:py-2">
+                  <span className="text-xs sm:text-sm text-red-600">
+                    Discount {data.discountType === 'percentage' ? `(${data.discountValue}%)` : ''}:
+                  </span>
+                  <span className="text-xs sm:text-sm text-red-600">-{currencySymbol}{data.discountAmount.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between py-1 sm:py-2">
+                  <span className="text-xs sm:text-sm text-green-600 font-semibold">You Save:</span>
+                  <span className="text-xs sm:text-sm text-green-600 font-semibold">{currencySymbol}{data.discountAmount.toFixed(2)}</span>
+                </div>
+              </>
+            )}
             {data.sgstPercent > 0 && (
               <div className="flex justify-between py-1 sm:py-2">
                 <span className="text-xs sm:text-sm text-gray-700">SGST ({data.sgstPercent}%):</span>
-                <span className="text-xs sm:text-sm text-gray-700">₹{data.sgstAmount.toFixed(2)}</span>
+                <span className="text-xs sm:text-sm text-gray-700">{currencySymbol}{data.sgstAmount.toFixed(2)}</span>
               </div>
             )}
             {data.cgstPercent > 0 && (
               <div className="flex justify-between py-1 sm:py-2">
                 <span className="text-xs sm:text-sm text-gray-700">CGST ({data.cgstPercent}%):</span>
-                <span className="text-xs sm:text-sm text-gray-700">₹{data.cgstAmount.toFixed(2)}</span>
+                <span className="text-xs sm:text-sm text-gray-700">{currencySymbol}{data.cgstAmount.toFixed(2)}</span>
               </div>
             )}
             <div className="flex justify-between py-2 sm:py-3 border-t-2 border-gray-800 font-bold text-sm sm:text-lg text-gray-800">
               <span>Total:</span>
-              <span>₹{data.total.toFixed(2)}</span>
+              <span>{currencySymbol}{data.total.toFixed(2)}</span>
             </div>
           </div>
         </div>
@@ -132,7 +147,19 @@ export const InvoicePreview = memo(function InvoicePreview({ data, className = "
                 {data.qrCodeUrl && (
                   <div className="mt-2">
                     <strong className="text-gray-800">UPI QR Code:</strong><br />
-                    <img src={data.qrCodeUrl} alt="UPI QR Code" className="w-16 h-16 sm:w-24 sm:h-24 mt-1 border border-gray-300 rounded" />
+                    <img 
+                      src={data.qrCodeUrl} 
+                      alt="UPI QR Code" 
+                      className="w-16 h-16 sm:w-24 sm:h-24 mt-1 border border-gray-300 rounded"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.style.display = 'none';
+                        const placeholder = document.createElement('div');
+                        placeholder.className = 'w-16 h-16 sm:w-24 sm:h-24 mt-1 border border-gray-300 rounded bg-gray-100 flex items-center justify-center text-xs text-gray-500';
+                        placeholder.innerHTML = 'QR Code<br>Loading...';
+                        target.parentElement?.appendChild(placeholder);
+                      }}
+                    />
                   </div>
                 )}
               </div>

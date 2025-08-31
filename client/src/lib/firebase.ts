@@ -25,6 +25,7 @@ export interface FirebaseInvoice extends Omit<InvoiceFormData, 'items'> {
     amount: number;
   }>;
   subtotal: number;
+  discountAmount: number;
   sgstAmount: number;
   cgstAmount: number;
   total: number;
@@ -47,9 +48,24 @@ function generateUPIQRCode(upiId: string, amount: number, name: string, invoiceN
 
 export async function saveInvoice(invoiceData: InvoiceFormData): Promise<string> {
   const subtotal = invoiceData.items.reduce((sum, item) => sum + item.amount, 0);
-  const sgstAmount = subtotal * (invoiceData.sgstPercent / 100);
-  const cgstAmount = subtotal * (invoiceData.cgstPercent / 100);
-  const total = subtotal + sgstAmount + cgstAmount;
+  
+  // Calculate discount
+  let discountAmount = 0;
+  const discountValue = invoiceData.discountValue ?? 0;
+  const discountType = invoiceData.discountType || "percentage";
+  
+  if (discountValue > 0) {
+    if (discountType === "percentage") {
+      discountAmount = subtotal * (discountValue / 100);
+    } else {
+      discountAmount = discountValue;
+    }
+  }
+  
+  const discountedSubtotal = subtotal - discountAmount;
+  const sgstAmount = discountedSubtotal * ((invoiceData.sgstPercent ?? 9) / 100);
+  const cgstAmount = discountedSubtotal * ((invoiceData.cgstPercent ?? 9) / 100);
+  const total = discountedSubtotal + sgstAmount + cgstAmount;
   
   // Generate QR code URL if UPI ID is provided
   const qrCodeUrl = invoiceData.upiId ? generateUPIQRCode(
@@ -61,7 +77,11 @@ export async function saveInvoice(invoiceData: InvoiceFormData): Promise<string>
 
   const firebaseData: Omit<FirebaseInvoice, 'id'> = {
     ...invoiceData,
+    discountType: discountType as 'percentage' | 'fixed',
+    discountValue: discountValue,
+    currency: (invoiceData.currency || 'INR') as 'INR' | 'USD',
     subtotal,
+    discountAmount,
     sgstAmount,
     cgstAmount,
     total,
@@ -104,9 +124,24 @@ export async function getInvoiceById(id: string): Promise<FirebaseInvoice | null
 
 export async function updateInvoice(id: string, invoiceData: InvoiceFormData): Promise<void> {
   const subtotal = invoiceData.items.reduce((sum, item) => sum + item.amount, 0);
-  const sgstAmount = subtotal * (invoiceData.sgstPercent / 100);
-  const cgstAmount = subtotal * (invoiceData.cgstPercent / 100);
-  const total = subtotal + sgstAmount + cgstAmount;
+  
+  // Calculate discount
+  let discountAmount = 0;
+  const discountValue = invoiceData.discountValue ?? 0;
+  const discountType = invoiceData.discountType || "percentage";
+  
+  if (discountValue > 0) {
+    if (discountType === "percentage") {
+      discountAmount = subtotal * (discountValue / 100);
+    } else {
+      discountAmount = discountValue;
+    }
+  }
+  
+  const discountedSubtotal = subtotal - discountAmount;
+  const sgstAmount = discountedSubtotal * ((invoiceData.sgstPercent ?? 9) / 100);
+  const cgstAmount = discountedSubtotal * ((invoiceData.cgstPercent ?? 9) / 100);
+  const total = discountedSubtotal + sgstAmount + cgstAmount;
   
   // Generate QR code URL if UPI ID is provided
   const qrCodeUrl = invoiceData.upiId ? generateUPIQRCode(
@@ -118,7 +153,11 @@ export async function updateInvoice(id: string, invoiceData: InvoiceFormData): P
 
   const firebaseData: Omit<FirebaseInvoice, 'id' | 'createdAt'> = {
     ...invoiceData,
+    discountType: discountType as 'percentage' | 'fixed',
+    discountValue: discountValue,
+    currency: (invoiceData.currency || 'INR') as 'INR' | 'USD',
     subtotal,
+    discountAmount,
     sgstAmount,
     cgstAmount,
     total,
