@@ -50,6 +50,7 @@ export type Invoice = typeof invoices.$inferSelect;
 export const invoiceItemSchema = z.object({
   name: z.string().min(1, "Item name is required"),
   description: z.string().min(1, "Description is required"),
+  hsnSacCode: z.string().optional(),
   quantity: z.number().min(1, "Quantity must be at least 1"),
   rate: z.number().min(0, "Rate must be positive").default(0),
   amount: z.number().min(0, "Amount must be positive").default(0),

@@ -69,6 +69,7 @@ export const InvoicePreview = memo(function InvoicePreview({ data, className = "
                   <td className="py-2 sm:py-3 px-2 sm:px-4">
                     <div className="font-semibold text-xs sm:text-sm text-gray-800">{item.name}</div>
                     <div className="text-xs text-gray-600 whitespace-pre-line">{item.description}</div>
+                    {item.hsnSacCode && <div className="text-xs text-gray-500 mt-0.5">HSN/SAC: {item.hsnSacCode}</div>}
                   </td>
                   <td className="text-right py-2 sm:py-3 px-2 sm:px-4 text-xs sm:text-sm text-gray-800">{item.quantity}</td>
                   <td className="text-right py-2 sm:py-3 px-2 sm:px-4 text-xs sm:text-sm text-gray-800">{currencySymbol}{item.rate.toFixed(2)}</td>

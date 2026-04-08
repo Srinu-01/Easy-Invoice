@@ -45,7 +45,7 @@ export function InvoiceForm({ onDataChange, editingInvoice, onDuplicateSuccess }
         date.setDate(date.getDate() + 30);
         return date.toISOString().split('T')[0];
       })(),
-      items: editingInvoice?.items || [{ name: "", description: "", quantity: 1, rate: "" as unknown as number, amount: 0 }],
+      items: editingInvoice?.items || [{ name: "", description: "", hsnSacCode: "", quantity: 1, rate: "" as unknown as number, amount: 0 }],
       sgstPercent: editingInvoice?.sgstPercent ?? 9,
       cgstPercent: editingInvoice?.cgstPercent ?? 9,
       discountType: editingInvoice?.discountType || "percentage",
@@ -157,7 +157,7 @@ export function InvoiceForm({ onDataChange, editingInvoice, onDuplicateSuccess }
   };
 
   const addItem = () => {
-    append({ name: "", description: "", quantity: 1, rate: "" as unknown as number, amount: 0 });
+    append({ name: "", description: "", hsnSacCode: "", quantity: 1, rate: "" as unknown as number, amount: 0 });
   };
 
   const calculateItemAmount = (index: number) => {
@@ -608,6 +608,21 @@ export function InvoiceForm({ onDataChange, editingInvoice, onDuplicateSuccess }
                             <FormLabel className="text-sm sm:text-base">Description</FormLabel>
                             <FormControl>
                               <Textarea placeholder="Social Media campaign for 30 days" {...field} className="text-sm sm:text-base min-h-[60px]" />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name={`items.${index}.hsnSacCode`}
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-sm sm:text-base">HSN/SAC Code <span className="text-muted-foreground font-normal">(optional)</span></FormLabel>
+                            <FormControl>
+                              <Input placeholder="e.g. 998361" {...field} className="text-sm sm:text-base" />
                             </FormControl>
                             <FormMessage />
                           </FormItem>

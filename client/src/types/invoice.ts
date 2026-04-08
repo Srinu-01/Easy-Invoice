@@ -1,6 +1,7 @@
 export interface InvoiceItem {
   name: string;
   description: string;
+  hsnSacCode?: string;
   quantity: number;
   rate: number;
   amount: number;
