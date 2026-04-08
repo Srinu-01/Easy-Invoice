@@ -23,13 +23,15 @@ export interface InvoiceFormData {
   cgstPercent: number;
   discountType: 'percentage' | 'fixed';
   discountValue: number;
-  currency: 'INR' | 'USD';
+  currency: 'INR' | 'USD' | 'EUR' | 'GBP' | 'AED' | 'SAR' | 'JPY' | 'CAD' | 'AUD' | 'SGD' | 'CHF' | 'CNY' | 'ZAR' | 'BRL' | 'MXN' | 'KRW' | 'THB' | 'MYR' | 'NZD' | 'SEK' | 'NOK' | 'DKK' | 'HKD';
   notes?: string;
   termsAndConditions?: string;
+  thankYouNote?: string;
   theme: 'classic' | 'modern' | 'bold';
   bankName?: string;
   accountNumber?: string;
   ifscCode?: string;
+  swiftCode?: string;
   branchName?: string;
   upiId?: string;
 }

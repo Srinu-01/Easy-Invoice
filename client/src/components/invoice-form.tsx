@@ -10,7 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Plus, Trash2, Upload, Save, FileText, Printer, Copy } from "lucide-react";
 import { uploadToCloudinary } from "@/lib/cloudinary";
 import { saveInvoice, updateInvoice, duplicateInvoice, type FirebaseInvoice, generateUPIQRCode } from "@/lib/firebase";
-import { exportToPDF, printInvoice } from "@/utils/pdf-export";
+import { exportToPDF, printInvoice, getCurrencySymbol } from "@/utils/pdf-export";
 import { useToast } from "@/hooks/use-toast";
 import { invoiceFormSchema, type InvoiceFormData } from "@shared/schema";
 import type { InvoiceData } from "@/types/invoice";
@@ -45,7 +45,7 @@ export function InvoiceForm({ onDataChange, editingInvoice, onDuplicateSuccess }
         date.setDate(date.getDate() + 30);
         return date.toISOString().split('T')[0];
       })(),
-      items: editingInvoice?.items || [{ name: "", description: "", quantity: 1, rate: 0, amount: 0 }],
+      items: editingInvoice?.items || [{ name: "", description: "", quantity: 1, rate: "" as unknown as number, amount: 0 }],
       sgstPercent: editingInvoice?.sgstPercent ?? 9,
       cgstPercent: editingInvoice?.cgstPercent ?? 9,
       discountType: editingInvoice?.discountType || "percentage",
@@ -53,10 +53,12 @@ export function InvoiceForm({ onDataChange, editingInvoice, onDuplicateSuccess }
       currency: editingInvoice?.currency || "INR",
       notes: editingInvoice?.notes || "",
       termsAndConditions: editingInvoice?.termsAndConditions || "",
+      thankYouNote: editingInvoice?.thankYouNote || "Thank you for choosing DREAM TEAM SERVICES. We are committed to delivering high-quality services. Please feel free to reach out for any clarifications during the Project.",
       theme: editingInvoice?.theme || "classic",
       bankName: editingInvoice?.bankName || "",
       accountNumber: editingInvoice?.accountNumber || "",
       ifscCode: editingInvoice?.ifscCode || "",
+      swiftCode: editingInvoice?.swiftCode || "BARBINBBKKD",
       branchName: editingInvoice?.branchName || "",
       upiId: editingInvoice?.upiId || ""
     }
@@ -92,8 +94,8 @@ export function InvoiceForm({ onDataChange, editingInvoice, onDuplicateSuccess }
     const cgstAmount = discountedSubtotal * ((watchedValues.cgstPercent || 0) / 100);
     const total = discountedSubtotal + sgstAmount + cgstAmount;
 
-    // Generate QR code URL if UPI ID is provided using the centralized function
-    const qrCodeUrl = watchedValues.upiId ? generateUPIQRCode(
+    // Generate QR code URL only for INR currency with UPI ID
+    const qrCodeUrl = (watchedValues.currency === 'INR' && watchedValues.upiId) ? generateUPIQRCode(
       watchedValues.upiId,
       total,
       watchedValues.companyName || 'Company',
@@ -104,7 +106,7 @@ export function InvoiceForm({ onDataChange, editingInvoice, onDuplicateSuccess }
       ...watchedValues,
       discountType: discountType as 'percentage' | 'fixed',
       discountValue: discountValue,
-      currency: (watchedValues.currency || 'INR') as 'INR' | 'USD',
+      currency: (watchedValues.currency || 'INR') as InvoiceData['currency'],
       items: items.filter(item => item?.name || item?.description),
       subtotal,
       discountAmount,
@@ -155,7 +157,7 @@ export function InvoiceForm({ onDataChange, editingInvoice, onDuplicateSuccess }
   };
 
   const addItem = () => {
-    append({ name: "", description: "", quantity: 1, rate: 0, amount: 0 });
+    append({ name: "", description: "", quantity: 1, rate: "" as unknown as number, amount: 0 });
   };
 
   const calculateItemAmount = (index: number) => {
@@ -224,8 +226,8 @@ export function InvoiceForm({ onDataChange, editingInvoice, onDuplicateSuccess }
       const cgstAmount = discountedSubtotal * ((formData.cgstPercent ?? 9) / 100);
       const total = discountedSubtotal + sgstAmount + cgstAmount;
 
-      // Generate QR code URL if UPI ID is provided using the centralized function
-      const qrCodeUrl = formData.upiId ? generateUPIQRCode(
+      // Generate QR code URL only for INR currency with UPI ID
+      const qrCodeUrl = (formData.currency === 'INR' && formData.upiId) ? generateUPIQRCode(
         formData.upiId,
         total,
         formData.companyName,
@@ -236,7 +238,7 @@ export function InvoiceForm({ onDataChange, editingInvoice, onDuplicateSuccess }
         ...formData,
         discountType: discountType as 'percentage' | 'fixed',
         discountValue: discountValue,
-        currency: (formData.currency || 'INR') as 'INR' | 'USD',
+        currency: (formData.currency || 'INR') as InvoiceData['currency'],
         items,
         subtotal,
         discountAmount,
@@ -284,8 +286,8 @@ export function InvoiceForm({ onDataChange, editingInvoice, onDuplicateSuccess }
       const cgstAmount = discountedSubtotal * ((formData.cgstPercent ?? 9) / 100);
       const total = discountedSubtotal + sgstAmount + cgstAmount;
 
-      // Generate QR code URL if UPI ID is provided using the centralized function
-      const qrCodeUrl = formData.upiId ? generateUPIQRCode(
+      // Generate QR code URL only for INR currency with UPI ID
+      const qrCodeUrl = (formData.currency === 'INR' && formData.upiId) ? generateUPIQRCode(
         formData.upiId,
         total,
         formData.companyName,
@@ -296,7 +298,7 @@ export function InvoiceForm({ onDataChange, editingInvoice, onDuplicateSuccess }
         ...formData,
         discountType: discountType as 'percentage' | 'fixed',
         discountValue: discountValue,
-        currency: (formData.currency || 'INR') as 'INR' | 'USD',
+        currency: (formData.currency || 'INR') as InvoiceData['currency'],
         items,
         subtotal,
         discountAmount,
@@ -640,15 +642,18 @@ export function InvoiceForm({ onDataChange, editingInvoice, onDuplicateSuccess }
                         name={`items.${index}.rate`}
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel className="text-sm sm:text-base">Rate ({(watchedValues.currency || 'INR') === 'INR' ? '₹' : '$'})</FormLabel>
+                            <FormLabel className="text-sm sm:text-base">Rate ({getCurrencySymbol(watchedValues.currency || 'INR')})</FormLabel>
                             <FormControl>
                               <Input
                                 type="number"
                                 min="0"
                                 step="0.01"
+                                placeholder="0.00"
                                 {...field}
+                                value={field.value === 0 && !document.activeElement?.isSameNode(document.querySelector(`[name="items.${index}.rate"]`)) ? '' : field.value}
                                 onChange={(e) => {
-                                  field.onChange(Number(e.target.value));
+                                  const val = e.target.value === '' ? 0 : Number(e.target.value);
+                                  field.onChange(val);
                                   calculateItemAmount(index);
                                 }}
                                 className="text-sm sm:text-base"
@@ -663,7 +668,7 @@ export function InvoiceForm({ onDataChange, editingInvoice, onDuplicateSuccess }
                         name={`items.${index}.amount`}
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel className="text-sm sm:text-base">Amount ({(watchedValues.currency || 'INR') === 'INR' ? '₹' : '$'})</FormLabel>
+                            <FormLabel className="text-sm sm:text-base">Amount ({getCurrencySymbol(watchedValues.currency || 'INR')})</FormLabel>
                             <FormControl>
                               <Input
                                 type="number"
@@ -766,7 +771,7 @@ export function InvoiceForm({ onDataChange, editingInvoice, onDuplicateSuccess }
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className="text-sm sm:text-base">
-                      Discount {(watchedValues.discountType || 'percentage') === 'percentage' ? '(%)' : `(${(watchedValues.currency || 'INR') === 'INR' ? '₹' : '$'})`}
+                      Discount {(watchedValues.discountType || 'percentage') === 'percentage' ? '(%)' : `(${getCurrencySymbol(watchedValues.currency || 'INR')})`}
                     </FormLabel>
                     <FormControl>
                       <Input
@@ -792,7 +797,6 @@ export function InvoiceForm({ onDataChange, editingInvoice, onDuplicateSuccess }
                     <Select 
                       onValueChange={(value) => {
                         field.onChange(value);
-                        // Force form to update and recalculate
                         form.trigger();
                       }} 
                       value={field.value || 'INR'}
@@ -803,8 +807,29 @@ export function InvoiceForm({ onDataChange, editingInvoice, onDuplicateSuccess }
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="INR">₹ INR (Rupees)</SelectItem>
-                        <SelectItem value="USD">$ USD (Dollars)</SelectItem>
+                        <SelectItem value="INR">₹ INR (Indian Rupee)</SelectItem>
+                        <SelectItem value="USD">$ USD (US Dollar)</SelectItem>
+                        <SelectItem value="EUR">€ EUR (Euro)</SelectItem>
+                        <SelectItem value="GBP">£ GBP (British Pound)</SelectItem>
+                        <SelectItem value="AED">د.إ AED (UAE Dirham)</SelectItem>
+                        <SelectItem value="SAR">﷼ SAR (Saudi Riyal)</SelectItem>
+                        <SelectItem value="JPY">¥ JPY (Japanese Yen)</SelectItem>
+                        <SelectItem value="CAD">$ CAD (Canadian Dollar)</SelectItem>
+                        <SelectItem value="AUD">$ AUD (Australian Dollar)</SelectItem>
+                        <SelectItem value="SGD">$ SGD (Singapore Dollar)</SelectItem>
+                        <SelectItem value="CHF">CHF (Swiss Franc)</SelectItem>
+                        <SelectItem value="CNY">¥ CNY (Chinese Yuan)</SelectItem>
+                        <SelectItem value="ZAR">R ZAR (South African Rand)</SelectItem>
+                        <SelectItem value="BRL">R$ BRL (Brazilian Real)</SelectItem>
+                        <SelectItem value="MXN">$ MXN (Mexican Peso)</SelectItem>
+                        <SelectItem value="KRW">₩ KRW (South Korean Won)</SelectItem>
+                        <SelectItem value="THB">฿ THB (Thai Baht)</SelectItem>
+                        <SelectItem value="MYR">RM MYR (Malaysian Ringgit)</SelectItem>
+                        <SelectItem value="NZD">$ NZD (New Zealand Dollar)</SelectItem>
+                        <SelectItem value="SEK">kr SEK (Swedish Krona)</SelectItem>
+                        <SelectItem value="NOK">kr NOK (Norwegian Krone)</SelectItem>
+                        <SelectItem value="DKK">kr DKK (Danish Krone)</SelectItem>
+                        <SelectItem value="HKD">$ HKD (Hong Kong Dollar)</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -858,12 +883,53 @@ export function InvoiceForm({ onDataChange, editingInvoice, onDuplicateSuccess }
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className="text-sm sm:text-base">Terms and Conditions</FormLabel>
+                  <div className="mb-2">
+                    <Select
+                      onValueChange={(value) => {
+                        if (value === "template1") {
+                          field.onChange("Full payment must be completed before any work begins for Dream Team Services. Meta Ad spend is separate and not included in this service fee.");
+                        } else if (value === "template2") {
+                          field.onChange("50% of the payment is required upfront before work begins. Once the work is completed, please make the complete remaining payment to finalize the project.");
+                        } else if (value === "template3") {
+                          field.onChange("1. Payment is due within 30 days of invoice date.\n2. Late payments may incur additional charges.\n3. All disputes must be reported within 7 days.\n4. Meta Ad spend is separate and not included in this service fee.");
+                        }
+                      }}
+                    >
+                      <SelectTrigger className="text-sm sm:text-base">
+                        <SelectValue placeholder="Choose a predefined template (optional)" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="template1">Full Payment Required Before Work</SelectItem>
+                        <SelectItem value="template2">50% Advance Payment Required</SelectItem>
+                        <SelectItem value="template3">Standard Net 30 Terms</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                   <FormControl>
                     <Textarea 
                       placeholder="1. Payment is due within 30 days of invoice date.&#10;2. Late payments may incur additional charges.&#10;3. All disputes must be reported within 7 days." 
                       rows={4}
                       {...field} 
                       className="text-sm sm:text-base min-h-[100px]"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="thankYouNote"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-sm sm:text-base">Thank You Note</FormLabel>
+                  <FormControl>
+                    <Textarea 
+                      placeholder="Thank you for choosing our services..." 
+                      rows={3}
+                      {...field} 
+                      className="text-sm sm:text-base min-h-[80px]"
                     />
                   </FormControl>
                   <FormMessage />
@@ -916,7 +982,7 @@ export function InvoiceForm({ onDataChange, editingInvoice, onDuplicateSuccess }
                 name="ifscCode"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-sm sm:text-base">IFSC Code</FormLabel>
+                    <FormLabel className="text-sm sm:text-base">{watchedValues.currency === 'INR' ? 'IFSC Code' : 'IFSC Code (if applicable)'}</FormLabel>
                     <FormControl>
                       <Input placeholder="SBIN0001234" {...field} className="text-sm sm:text-base" />
                     </FormControl>
@@ -924,6 +990,21 @@ export function InvoiceForm({ onDataChange, editingInvoice, onDuplicateSuccess }
                   </FormItem>
                 )}
               />
+              <FormField
+                control={form.control}
+                name="swiftCode"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-sm sm:text-base">SWIFT Code</FormLabel>
+                    <FormControl>
+                      <Input placeholder="BARBINBBKKD" {...field} className="text-sm sm:text-base" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
               <FormField
                 control={form.control}
                 name="branchName"
@@ -938,19 +1019,21 @@ export function InvoiceForm({ onDataChange, editingInvoice, onDuplicateSuccess }
                 )}
               />
             </div>
-            <FormField
-              control={form.control}
-              name="upiId"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-sm sm:text-base">UPI ID (for QR Code)</FormLabel>
-                  <FormControl>
-                    <Input placeholder="yourname@paytm" {...field} className="text-sm sm:text-base" />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            {watchedValues.currency === 'INR' && (
+              <FormField
+                control={form.control}
+                name="upiId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-sm sm:text-base">UPI ID (for QR Code)</FormLabel>
+                    <FormControl>
+                      <Input placeholder="yourname@paytm" {...field} className="text-sm sm:text-base" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
           </CardContent>
         </Card>
 

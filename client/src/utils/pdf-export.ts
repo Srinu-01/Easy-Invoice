@@ -3,13 +3,32 @@ import html2canvas from 'html2canvas';
 import type { InvoiceData, ThemeStyles } from '@/types/invoice';
 
 export function getCurrencySymbol(currency: string): string {
-  switch (currency) {
-    case 'USD':
-      return '$';
-    case 'INR':
-    default:
-      return '₹';
-  }
+  const symbols: Record<string, string> = {
+    INR: '₹',
+    USD: '$',
+    EUR: '€',
+    GBP: '£',
+    AED: 'د.إ',
+    SAR: '﷼',
+    JPY: '¥',
+    CAD: 'C$',
+    AUD: 'A$',
+    SGD: 'S$',
+    CHF: 'CHF',
+    CNY: '¥',
+    ZAR: 'R',
+    BRL: 'R$',
+    MXN: 'MX$',
+    KRW: '₩',
+    THB: '฿',
+    MYR: 'RM',
+    NZD: 'NZ$',
+    SEK: 'kr',
+    NOK: 'kr',
+    DKK: 'kr',
+    HKD: 'HK$',
+  };
+  return symbols[currency] || currency;
 }
 
 export function getThemeStyles(theme: string): ThemeStyles {
@@ -170,7 +189,7 @@ export function generateInvoiceHTML(data: InvoiceData): string {
       ` : ''}
 
       <!-- Bank Details -->
-      ${(data.bankName || data.accountNumber || data.ifscCode || data.branchName || data.upiId) ? `
+      ${(data.bankName || data.accountNumber || data.ifscCode || data.swiftCode || data.branchName || data.upiId) ? `
         <div class="bank-details" style="margin-top: 2rem; border: 2px solid #e5e7eb; padding: 16px; border-radius: 8px; background-color: #f9fafb; page-break-inside: avoid;">
           <h4 style="font-weight: 600; color: #1f2937; margin-bottom: 12px; font-size: 16px;">Bank Details:</h4>
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; font-size: 14px; color: #374151;">
@@ -178,11 +197,12 @@ export function generateInvoiceHTML(data: InvoiceData): string {
               ${data.bankName ? `<div style="margin-bottom: 8px;"><strong style="color: #1f2937;">Bank Name:</strong> ${data.bankName}</div>` : ''}
               ${data.accountNumber ? `<div style="margin-bottom: 8px;"><strong style="color: #1f2937;">Account Number:</strong> ${data.accountNumber}</div>` : ''}
               ${data.ifscCode ? `<div style="margin-bottom: 8px;"><strong style="color: #1f2937;">IFSC Code:</strong> ${data.ifscCode}</div>` : ''}
+              ${data.swiftCode ? `<div style="margin-bottom: 8px;"><strong style="color: #1f2937;">SWIFT Code:</strong> ${data.swiftCode}</div>` : ''}
             </div>
             <div>
               ${data.branchName ? `<div style="margin-bottom: 8px;"><strong style="color: #1f2937;">Branch:</strong> ${data.branchName}</div>` : ''}
-              ${data.upiId ? `<div style="margin-bottom: 8px;"><strong style="color: #1f2937;">UPI ID:</strong> ${data.upiId}</div>` : ''}
-              ${data.qrCodeUrl ? `
+              ${(data.currency === 'INR' && data.upiId) ? `<div style="margin-bottom: 8px;"><strong style="color: #1f2937;">UPI ID:</strong> ${data.upiId}</div>` : ''}
+              ${(data.currency === 'INR' && data.qrCodeUrl) ? `
                 <div style="margin-top: 12px;">
                   <strong style="color: #1f2937;">UPI QR Code:</strong><br>
                   <div style="width: 100px; height: 100px; margin-top: 8px; border: 1px solid #d1d5db; border-radius: 4px; background-color: #ffffff; display: flex; align-items: center; justify-content: center; padding: 5px; box-sizing: border-box;">
@@ -204,6 +224,13 @@ export function generateInvoiceHTML(data: InvoiceData): string {
         <div class="invoice-notes" style="margin-top: 2rem; page-break-inside: avoid; margin-bottom: 2rem;">
           <h4 style="font-weight: 600; color: #1f2937; margin-bottom: 8px; font-size: 16px;">Notes:</h4>
           <div style="color: #374151; font-size: 14px; line-height: 1.5; white-space: pre-line; padding: 12px; border: 1px solid #e5e7eb; border-radius: 6px; background-color: #f9fafb; min-height: 60px;">${data.notes}</div>
+        </div>
+      ` : ''}
+
+      <!-- Thank You Note -->
+      ${data.thankYouNote ? `
+        <div style="margin-top: 2rem; text-align: center; page-break-inside: avoid;">
+          <p style="color: #6b7280; font-size: 14px; font-style: italic; line-height: 1.6; max-width: 600px; margin: 0 auto;">${data.thankYouNote}</p>
         </div>
       ` : ''}
       

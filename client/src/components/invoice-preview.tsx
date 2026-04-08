@@ -132,7 +132,7 @@ export const InvoicePreview = memo(function InvoicePreview({ data, className = "
         )}
 
         {/* Bank Details */}
-        {(data.bankName || data.accountNumber || data.ifscCode || data.branchName || data.upiId) && (
+        {(data.bankName || data.accountNumber || data.ifscCode || data.swiftCode || data.branchName || data.upiId) && (
           <div className="mt-6 sm:mt-8 border border-gray-200 p-3 sm:p-4 rounded-lg">
             <h4 className="font-semibold text-sm sm:text-base text-gray-800 mb-3">Bank Details:</h4>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 text-xs sm:text-sm text-gray-700">
@@ -140,11 +140,12 @@ export const InvoicePreview = memo(function InvoicePreview({ data, className = "
                 {data.bankName && <div><strong className="text-gray-800">Bank Name:</strong> {data.bankName}</div>}
                 {data.accountNumber && <div><strong className="text-gray-800">Account Number:</strong> {data.accountNumber}</div>}
                 {data.ifscCode && <div><strong className="text-gray-800">IFSC Code:</strong> {data.ifscCode}</div>}
+                {data.swiftCode && <div><strong className="text-gray-800">SWIFT Code:</strong> {data.swiftCode}</div>}
               </div>
               <div>
                 {data.branchName && <div><strong className="text-gray-800">Branch:</strong> {data.branchName}</div>}
-                {data.upiId && <div><strong className="text-gray-800">UPI ID:</strong> {data.upiId}</div>}
-                {data.qrCodeUrl && (
+                {data.currency === 'INR' && data.upiId && <div><strong className="text-gray-800">UPI ID:</strong> {data.upiId}</div>}
+                {data.currency === 'INR' && data.qrCodeUrl && (
                   <div className="mt-2">
                     <strong className="text-gray-800">UPI QR Code:</strong><br />
                     <img 
@@ -154,10 +155,6 @@ export const InvoicePreview = memo(function InvoicePreview({ data, className = "
                       onError={(e) => {
                         const target = e.target as HTMLImageElement;
                         target.style.display = 'none';
-                        const placeholder = document.createElement('div');
-                        placeholder.className = 'w-16 h-16 sm:w-24 sm:h-24 mt-1 border border-gray-300 rounded bg-gray-100 flex items-center justify-center text-xs text-gray-500';
-                        placeholder.innerHTML = 'QR Code<br>Loading...';
-                        target.parentElement?.appendChild(placeholder);
                       }}
                     />
                   </div>
@@ -172,6 +169,13 @@ export const InvoicePreview = memo(function InvoicePreview({ data, className = "
           <div className="mt-6 sm:mt-8">
             <h4 className="font-semibold text-sm sm:text-base text-gray-800 mb-2">Notes:</h4>
             <p className="text-xs sm:text-sm text-gray-700 whitespace-pre-line">{data.notes}</p>
+          </div>
+        )}
+
+        {/* Thank You Note */}
+        {data.thankYouNote && (
+          <div className="mt-6 sm:mt-8 text-center">
+            <p className="text-xs sm:text-sm text-gray-600 italic leading-relaxed">{data.thankYouNote}</p>
           </div>
         )}
       </div>

@@ -44,75 +44,52 @@ export function RecentInvoices({ onBackToHome, onEditInvoice, onDuplicateInvoice
     }
   };
 
+  const mapFirebaseToInvoiceData = (invoice: FirebaseInvoice): InvoiceData => ({
+    id: invoice.id,
+    invoiceNumber: invoice.invoiceNumber,
+    companyName: invoice.companyName,
+    companyGST: invoice.companyGST,
+    companyAddress: invoice.companyAddress,
+    logoUrl: invoice.logoUrl,
+    clientName: invoice.clientName,
+    clientEmail: invoice.clientEmail,
+    clientGST: invoice.clientGST,
+    clientAddress: invoice.clientAddress,
+    invoiceDate: invoice.invoiceDate,
+    dueDate: invoice.dueDate,
+    items: invoice.items,
+    sgstPercent: invoice.sgstPercent,
+    cgstPercent: invoice.cgstPercent,
+    discountType: (invoice as any).discountType || "percentage",
+    discountValue: (invoice as any).discountValue ?? 0,
+    discountAmount: (invoice as any).discountAmount || 0,
+    currency: (invoice as any).currency || "INR",
+    notes: invoice.notes,
+    termsAndConditions: invoice.termsAndConditions,
+    thankYouNote: (invoice as any).thankYouNote || "",
+    theme: invoice.theme,
+    subtotal: invoice.subtotal,
+    sgstAmount: invoice.sgstAmount,
+    cgstAmount: invoice.cgstAmount,
+    total: invoice.total,
+    bankName: invoice.bankName,
+    accountNumber: invoice.accountNumber,
+    ifscCode: invoice.ifscCode,
+    swiftCode: (invoice as any).swiftCode || "",
+    branchName: invoice.branchName,
+    upiId: invoice.upiId,
+    qrCodeUrl: invoice.qrCodeUrl,
+  });
+
   const handleViewInvoice = (invoice: FirebaseInvoice) => {
-    const invoiceData: InvoiceData = {
-      id: invoice.id,
-      invoiceNumber: invoice.invoiceNumber,
-      companyName: invoice.companyName,
-      companyGST: invoice.companyGST,
-      companyAddress: invoice.companyAddress,
-      logoUrl: invoice.logoUrl,
-      clientName: invoice.clientName,
-      clientEmail: invoice.clientEmail,
-      clientGST: invoice.clientGST,
-      clientAddress: invoice.clientAddress,
-      invoiceDate: invoice.invoiceDate,
-      dueDate: invoice.dueDate,
-      items: invoice.items,
-      sgstPercent: invoice.sgstPercent,
-      cgstPercent: invoice.cgstPercent,
-      notes: invoice.notes,
-      termsAndConditions: invoice.termsAndConditions,
-      theme: invoice.theme,
-      subtotal: invoice.subtotal,
-      sgstAmount: invoice.sgstAmount,
-      cgstAmount: invoice.cgstAmount,
-      total: invoice.total,
-      bankName: invoice.bankName,
-      accountNumber: invoice.accountNumber,
-      ifscCode: invoice.ifscCode,
-      branchName: invoice.branchName,
-      upiId: invoice.upiId,
-      qrCodeUrl: invoice.qrCodeUrl,
-      createdAt: invoice.createdAt.toDate(),
-      updatedAt: invoice.updatedAt.toDate()
-    };
+    const invoiceData = mapFirebaseToInvoiceData(invoice);
     setSelectedInvoice(invoiceData);
     setShowDialog(true);
   };
 
   const handleExportPDF = async (invoice: FirebaseInvoice) => {
     try {
-      const invoiceData: InvoiceData = {
-        id: invoice.id,
-        invoiceNumber: invoice.invoiceNumber,
-        companyName: invoice.companyName,
-        companyGST: invoice.companyGST,
-        companyAddress: invoice.companyAddress,
-        logoUrl: invoice.logoUrl,
-        clientName: invoice.clientName,
-        clientEmail: invoice.clientEmail,
-        clientGST: invoice.clientGST,
-        clientAddress: invoice.clientAddress,
-        invoiceDate: invoice.invoiceDate,
-        dueDate: invoice.dueDate,
-        items: invoice.items,
-        sgstPercent: invoice.sgstPercent,
-        cgstPercent: invoice.cgstPercent,
-        notes: invoice.notes,
-        termsAndConditions: invoice.termsAndConditions,
-        theme: invoice.theme,
-        subtotal: invoice.subtotal,
-        sgstAmount: invoice.sgstAmount,
-        cgstAmount: invoice.cgstAmount,
-        total: invoice.total,
-        bankName: invoice.bankName,
-        accountNumber: invoice.accountNumber,
-        ifscCode: invoice.ifscCode,
-        branchName: invoice.branchName,
-        upiId: invoice.upiId,
-        qrCodeUrl: invoice.qrCodeUrl
-      };
+      const invoiceData = mapFirebaseToInvoiceData(invoice);
       await exportToPDF(invoiceData);
     } catch (error) {
       console.error("Error exporting PDF:", error);
@@ -132,36 +109,7 @@ export function RecentInvoices({ onBackToHome, onEditInvoice, onDuplicateInvoice
         description: "Loading images and preparing invoice for printing...",
       });
 
-      const invoiceData: InvoiceData = {
-        id: invoice.id,
-        invoiceNumber: invoice.invoiceNumber,
-        companyName: invoice.companyName,
-        companyGST: invoice.companyGST,
-        companyAddress: invoice.companyAddress,
-        logoUrl: invoice.logoUrl,
-        clientName: invoice.clientName,
-        clientEmail: invoice.clientEmail,
-        clientGST: invoice.clientGST,
-        clientAddress: invoice.clientAddress,
-        invoiceDate: invoice.invoiceDate,
-        dueDate: invoice.dueDate,
-        items: invoice.items,
-        sgstPercent: invoice.sgstPercent,
-        cgstPercent: invoice.cgstPercent,
-        notes: invoice.notes,
-        termsAndConditions: invoice.termsAndConditions,
-        theme: invoice.theme,
-        subtotal: invoice.subtotal,
-        sgstAmount: invoice.sgstAmount,
-        cgstAmount: invoice.cgstAmount,
-        total: invoice.total,
-        bankName: invoice.bankName,
-        accountNumber: invoice.accountNumber,
-        ifscCode: invoice.ifscCode,
-        branchName: invoice.branchName,
-        upiId: invoice.upiId,
-        qrCodeUrl: invoice.qrCodeUrl
-      };
+      const invoiceData = mapFirebaseToInvoiceData(invoice);
       printInvoice(invoiceData);
     } catch (error) {
       console.error("Error printing invoice:", error);

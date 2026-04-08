@@ -67,8 +67,8 @@ export async function saveInvoice(invoiceData: InvoiceFormData): Promise<string>
   const cgstAmount = discountedSubtotal * ((invoiceData.cgstPercent ?? 9) / 100);
   const total = discountedSubtotal + sgstAmount + cgstAmount;
   
-  // Generate QR code URL if UPI ID is provided
-  const qrCodeUrl = invoiceData.upiId ? generateUPIQRCode(
+  // Generate QR code URL only for INR currency with UPI ID
+  const qrCodeUrl = (invoiceData.currency === 'INR' && invoiceData.upiId) ? generateUPIQRCode(
     invoiceData.upiId, 
     total, 
     invoiceData.companyName, 
@@ -79,7 +79,7 @@ export async function saveInvoice(invoiceData: InvoiceFormData): Promise<string>
     ...invoiceData,
     discountType: discountType as 'percentage' | 'fixed',
     discountValue: discountValue,
-    currency: (invoiceData.currency || 'INR') as 'INR' | 'USD',
+    currency: invoiceData.currency || 'INR',
     subtotal,
     discountAmount,
     sgstAmount,
@@ -143,8 +143,8 @@ export async function updateInvoice(id: string, invoiceData: InvoiceFormData): P
   const cgstAmount = discountedSubtotal * ((invoiceData.cgstPercent ?? 9) / 100);
   const total = discountedSubtotal + sgstAmount + cgstAmount;
   
-  // Generate QR code URL if UPI ID is provided
-  const qrCodeUrl = invoiceData.upiId ? generateUPIQRCode(
+  // Generate QR code URL only for INR currency with UPI ID
+  const qrCodeUrl = (invoiceData.currency === 'INR' && invoiceData.upiId) ? generateUPIQRCode(
     invoiceData.upiId, 
     total, 
     invoiceData.companyName, 
@@ -155,7 +155,7 @@ export async function updateInvoice(id: string, invoiceData: InvoiceFormData): P
     ...invoiceData,
     discountType: discountType as 'percentage' | 'fixed',
     discountValue: discountValue,
-    currency: (invoiceData.currency || 'INR') as 'INR' | 'USD',
+    currency: invoiceData.currency || 'INR',
     subtotal,
     discountAmount,
     sgstAmount,
