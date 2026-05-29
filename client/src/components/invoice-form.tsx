@@ -45,7 +45,7 @@ export function InvoiceForm({ onDataChange, editingInvoice, onDuplicateSuccess }
         date.setDate(date.getDate() + 30);
         return date.toISOString().split('T')[0];
       })(),
-      items: editingInvoice?.items || [{ name: "", description: "", hsnSacCode: "", quantity: 1, rate: "" as unknown as number, amount: 0 }],
+      items: editingInvoice?.items || [{ name: "", description: "", hsnSacCode: "", quantity: 1, rate: 0, amount: 0 }],
       sgstPercent: editingInvoice?.sgstPercent ?? 9,
       cgstPercent: editingInvoice?.cgstPercent ?? 9,
       discountType: editingInvoice?.discountType || "percentage",
@@ -157,7 +157,7 @@ export function InvoiceForm({ onDataChange, editingInvoice, onDuplicateSuccess }
   };
 
   const addItem = () => {
-    append({ name: "", description: "", hsnSacCode: "", quantity: 1, rate: "" as unknown as number, amount: 0 });
+    append({ name: "", description: "", hsnSacCode: "", quantity: 1, rate: 0, amount: 0 });
   };
 
   const calculateItemAmount = (index: number) => {

@@ -209,8 +209,8 @@ export function RecentInvoices({ onBackToHome, onEditInvoice, onDuplicateInvoice
               <Card key={invoice.id} className="hover:shadow-xl transition-all duration-300 cursor-pointer transform hover:scale-105">
                 <CardContent className="p-4 sm:p-6">
                   <div className="flex flex-col sm:flex-row justify-between items-start mb-4 gap-2">
-                    <div className="flex-1">
-                      <h3 className="text-base sm:text-lg font-semibold text-slate-900 dark:text-white">{invoice.invoiceNumber}</h3>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-base sm:text-lg font-semibold text-slate-900 dark:text-white truncate">{invoice.invoiceNumber}</h3>
                       <p className="text-sm sm:text-base text-slate-600 dark:text-slate-300 truncate">{invoice.clientName}</p>
                     </div>
                     <Badge variant="secondary" className="bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 text-xs sm:text-sm shrink-0">

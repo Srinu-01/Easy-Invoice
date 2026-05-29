@@ -34,6 +34,28 @@ export interface FirebaseInvoice extends Omit<InvoiceFormData, 'items'> {
   updatedAt: Timestamp;
 }
 
+// Helper function to remove undefined fields recursively
+function removeUndefined<T>(obj: T): T {
+  if (Array.isArray(obj)) {
+    return obj.map(item => removeUndefined(item)) as any;
+  } else if (obj !== null && typeof obj === 'object') {
+    if (obj instanceof Date || obj instanceof Timestamp || typeof (obj as any).toDate === 'function') {
+      return obj;
+    }
+    const newObj: any = {};
+    for (const key in obj) {
+      if (Object.prototype.hasOwnProperty.call(obj, key)) {
+        const val = (obj as any)[key];
+        if (val !== undefined) {
+          newObj[key] = removeUndefined(val);
+        }
+      }
+    }
+    return newObj as T;
+  }
+  return obj;
+}
+
 // Helper function to generate UPI QR code URL with retry mechanism
 function generateUPIQRCode(upiId: string, amount: number, name: string, invoiceNumber: string): string {
   if (!upiId) return '';
@@ -90,7 +112,8 @@ export async function saveInvoice(invoiceData: InvoiceFormData): Promise<string>
     updatedAt: Timestamp.now(),
   };
 
-  const docRef = await addDoc(collection(db, "invoices"), firebaseData);
+  const cleanData = removeUndefined(firebaseData);
+  const docRef = await addDoc(collection(db, "invoices"), cleanData);
   return docRef.id;
 }
 
@@ -166,7 +189,8 @@ export async function updateInvoice(id: string, invoiceData: InvoiceFormData): P
   };
 
   const docRef = doc(db, "invoices", id);
-  await updateDoc(docRef, firebaseData);
+  const cleanData = removeUndefined(firebaseData);
+  await updateDoc(docRef, cleanData);
 }
 
 export async function deleteInvoice(id: string): Promise<void> {
@@ -207,7 +231,8 @@ export async function duplicateInvoice(id: string): Promise<string> {
   delete (duplicateData as any).id;
 
   // Save the duplicated invoice
-  const docRef = await addDoc(collection(db, "invoices"), duplicateData);
+  const cleanData = removeUndefined(duplicateData);
+  const docRef = await addDoc(collection(db, "invoices"), cleanData);
   return docRef.id;
 }
 
